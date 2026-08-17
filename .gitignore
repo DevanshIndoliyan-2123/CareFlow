@@ -1,22 +1,25 @@
-# Python
-__pycache__/
-*.py[cod]
-*.pyo
-
-# Virtual environment
+# Python virtual environment
 .venv/
 venv/
+env/
 
 # Environment variables
 .env
+.env.*
+
+# Python cache
+__pycache__/
+*.py[cod]
 
 # IDE
-.idea/
 .vscode/
+.idea/
+
+# Logs
+*.log
 
 # Temporary files
-*.pdf
 *.tmp
 
-# OS
-.DS_Store
+# Uploaded documents
+*.pdf
