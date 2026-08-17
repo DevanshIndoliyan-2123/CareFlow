@@ -3,12 +3,11 @@ spring:
     name: identity-service
 
   datasource:
-    url: jdbc:postgresql://127.0.0.1:5433/medverify_identity
+    url: jdbc:postgresql://localhost:5432/medverify_identity
     username: postgres
     password: postgres123
 
-
-
+  jpa:
     hibernate:
       ddl-auto: update
     show-sql: true
@@ -16,7 +15,8 @@ spring:
       hibernate:
         format_sql: true
         jdbc:
-          time_zone: Asia/Kolkata
+          time_zone: UTC
+
 server:
   port: 8081
 
