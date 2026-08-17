@@ -1,0 +1,31 @@
+spring:
+  application:
+    name: identity-service
+
+  datasource:
+    url: jdbc:postgresql://127.0.0.1:5433/medverify_identity
+    username: postgres
+    password: postgres123
+
+
+
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        jdbc:
+          time_zone: Asia/Kolkata
+server:
+  port: 8081
+
+jwt:
+  secret: your-long-development-secret-key-123456789
+  expiration: 3600000
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
