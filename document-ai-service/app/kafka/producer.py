@@ -2,12 +2,10 @@ import json
 
 from confluent_kafka import Producer
 
-
 from app.kafka.config import (
     KAFKA_BOOTSTRAP_SERVER,
     DOCUMENT_EXTRACTED_TOPIC
 )
-
 
 
 producer = Producer({
@@ -18,19 +16,53 @@ producer = Producer({
 })
 
 
+def delivery_report(
+        error,
+        message
+):
+
+    if error is not None:
+
+        print(
+            "Kafka delivery failed:",
+            error
+        )
+
+    else:
+
+        print(
+            "Kafka message delivered:",
+            f"topic={message.topic()}, "
+            f"partition={message.partition()}, "
+            f"offset={message.offset()}"
+        )
+
 
 def publish_extracted_document(
-        data:dict
+        data: dict
 ):
+
+    message = json.dumps(
+        data
+    )
 
 
     producer.produce(
 
-        DOCUMENT_EXTRACTED_TOPIC,
+        topic=DOCUMENT_EXTRACTED_TOPIC,
 
-        json.dumps(data)
+        value=message.encode("utf-8"),
+
+        callback=delivery_report
 
     )
 
 
+    # Wait until Kafka confirms delivery
+
     producer.flush()
+
+
+    print(
+        "Published document.extracted"
+    )
