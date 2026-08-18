@@ -1,0 +1,218 @@
+openapi: 3.0.3
+info:
+  title: CareFlow Healthcare Document Verification API
+  description: |
+    REST API Contract between React Frontend and API Gateway / Backend Services.
+    Browser communication is strictly routed through the API Gateway.
+  version: 1.0.0
+servers:
+  - url: http://localhost:8080/api/v1
+    description: Local API Gateway (Development)
+  - url: https://api.careflow.health/api/v1
+    description: Production API Gateway
+
+paths:
+  /documents:
+    post:
+      summary: Upload Medical Document for Verification
+      description: |
+        Accepts a medical PDF document (lab report, referral note, clinical summary),
+        stores it, and initiates the asynchronous verification pipeline.
+      operationId: uploadDocument
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - file
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: Medical document file (PDF format, max 25MB).
+      responses:
+        '201':
+          description: Document uploaded and queued for processing.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MedicalDocument'
+              example:
+                documentId: "DOC10001"
+                fileName: "medical-report.pdf"
+                documentType: "Medical Report"
+                uploadedAt: "2026-08-17T15:30:00Z"
+                status: "UPLOADED"
+        '400':
+          description: Invalid file format or missing file parameter.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal gateway or storage failure.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /documents/{documentId}/status:
+    get:
+      summary: Get Document Verification Status
+      description: |
+        Returns the current verification lifecycle state of the document.
+        Used by the frontend for polling every 3 seconds until workflow termination.
+      operationId: getDocumentStatus
+      parameters:
+        - name: documentId
+          in: path
+          required: true
+          description: Unique identifier of the uploaded document.
+          schema:
+            type: string
+            example: "DOC10001"
+      responses:
+        '200':
+          description: Current document verification status.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MedicalDocument'
+              examples:
+                inProgress:
+                  summary: AI Extraction in progress
+                  value:
+                    documentId: "DOC10001"
+                    fileName: "medical-report.pdf"
+                    documentType: "Medical Report"
+                    uploadedAt: "2026-08-17T15:30:00Z"
+                    status: "AI_EXTRACTED"
+                verified:
+                  summary: Successfully verified
+                  value:
+                    documentId: "DOC10001"
+                    fileName: "medical-report.pdf"
+                    documentType: "Medical Report"
+                    uploadedAt: "2026-08-17T15:30:00Z"
+                    status: "VERIFIED"
+                    providerName: "Mayo Clinic Network"
+                invalid:
+                  summary: Verification failed / invalid
+                  value:
+                    documentId: "DOC10001"
+                    fileName: "medical-report.pdf"
+                    documentType: "Medical Report"
+                    uploadedAt: "2026-08-17T15:30:00Z"
+                    status: "INVALID"
+                    rejectionReason: "Information provided in the document could not be verified with the provider."
+        '404':
+          description: Document not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /documents/{documentId}:
+    get:
+      summary: Get Full Document Details
+      description: Returns full document record including extracted clinical metadata.
+      operationId: getDocument
+      parameters:
+        - name: documentId
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "DOC10001"
+      responses:
+        '200':
+          description: Full document object.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MedicalDocument'
+        '404':
+          description: Document not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    DocumentStatus:
+      type: string
+      description: Formal status vocabulary agreed across all 3 team members.
+      enum:
+        - UPLOADED
+        - PROCESSING
+        - AI_EXTRACTED
+        - PROVIDER_IDENTIFIED
+        - VERIFICATION_PENDING
+        - VERIFIED
+        - INVALID
+        - FAILED
+      example: "VERIFIED"
+
+    MedicalDocument:
+      type: object
+      required:
+        - documentId
+        - fileName
+        - uploadedAt
+        - status
+      properties:
+        documentId:
+          type: string
+          description: Unique document tracking ID.
+          example: "DOC10001"
+        fileName:
+          type: string
+          description: Original filename uploaded by the user.
+          example: "medical-report.pdf"
+        documentType:
+          type: string
+          description: Categorized document type.
+          example: "Medical Report"
+        uploadedAt:
+          type: string
+          format: date-time
+          description: ISO-8601 timestamp of upload.
+          example: "2026-08-17T15:30:00Z"
+        status:
+          $ref: '#/components/schemas/DocumentStatus'
+        rejectionReason:
+          type: string
+          description: Reason if verification outcome is INVALID or FAILED.
+          example: "Information provided in the document could not be verified with the provider."
+        reason:
+          type: string
+          description: Alias for rejectionReason.
+        providerName:
+          type: string
+          description: Matched accredited healthcare provider name.
+          example: "Mayo Clinic Rochester"
+
+    ErrorResponse:
+      type: object
+      required:
+        - timestamp
+        - status
+        - code
+        - message
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+          example: "2026-08-17T20:00:00Z"
+        status:
+          type: integer
+          example: 400
+        code:
+          type: string
+          example: "INVALID_DOCUMENT"
+        message:
+          type: string
+          example: "The uploaded document could not be processed."
