@@ -1,0 +1,65 @@
+server:
+  port: 8082
+
+spring:
+
+  application:
+    name: document-service
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/medverify_document
+    username: postgres
+    password: postgres123
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+
+    properties:
+      hibernate:
+        format_sql: true
+
+    open-in-view: false
+
+  servlet:
+    multipart:
+      max-file-size: 20MB
+      max-request-size: 25MB
+
+  kafka:
+    bootstrap-servers: localhost:9092
+
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+
+      properties:
+        spring.json.add.type.headers: false
+
+      acks: all
+
+      retries: 3
+
+
+      enable.idempotence: true
+
+
+document:
+
+  storage:
+    location: ./storage/documents
+
+
+kafka:
+
+  topics:
+    document-uploaded: document.uploaded
+
+
+management:
+
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics

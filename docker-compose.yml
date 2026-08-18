@@ -1,0 +1,45 @@
+services:
+
+  postgres:
+    image: postgres:18
+    container_name: medverify-postgres
+
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres123
+
+    ports:
+      - "5432:5432"
+
+    volumes:
+      - postgres_data:/var/lib/postgresql
+
+    networks:
+      - medverify-network
+
+  document-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    container_name: medverify-document-service
+
+    ports:
+      - "8082:8082"
+
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://medverify-postgres:5432/medverify_document
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres123
+
+    depends_on:
+      - postgres
+
+    networks:
+      - medverify-network
+
+volumes:
+  postgres_data:
+
+networks:
+  medverify-network:
