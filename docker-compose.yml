@@ -1,0 +1,66 @@
+services:
+
+  provider-registry:
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    container_name: medverify-provider-registry
+
+    ports:
+      - "8086:8086"
+
+    environment:
+      DB_URL: jdbc:postgresql://medverify-postgres:5432/medverify_provider
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres123
+
+    depends_on:
+      medverify-postgres:
+        condition: service_healthy
+
+    networks:
+      - medverify-network
+
+    restart: unless-stopped
+
+
+  medverify-postgres:
+    image: postgres:17
+
+    container_name: medverify-postgres
+
+    environment:
+      POSTGRES_DB: medverify_provider
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres123
+
+    ports:
+      - "5432:5432"
+
+    volumes:
+      - provider-postgres-data:/var/lib/postgresql/data
+
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U postgres -d medverify_provider"
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+    networks:
+      - medverify-network
+
+    restart: unless-stopped
+
+
+networks:
+  medverify-network:
+    driver: bridge
+
+
+volumes:
+  provider-postgres-data:
