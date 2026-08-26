@@ -11,7 +11,7 @@ from app.kafka.config import (
 producer = Producer({
 
     "bootstrap.servers":
-    KAFKA_BOOTSTRAP_SERVER
+        KAFKA_BOOTSTRAP_SERVER
 
 })
 
@@ -38,9 +38,14 @@ def delivery_report(
         )
 
 
+
 def publish_extracted_document(
         data: dict
 ):
+    """
+    Publishes the frozen document.extracted
+    Kafka event.
+    """
 
     message = json.dumps(
         data
@@ -51,14 +56,13 @@ def publish_extracted_document(
 
         topic=DOCUMENT_EXTRACTED_TOPIC,
 
-        value=message.encode("utf-8"),
+        value=message.encode(
+            "utf-8"
+        ),
 
         callback=delivery_report
-
     )
 
-
-    # Wait until Kafka confirms delivery
 
     producer.flush()
 
